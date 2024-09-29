@@ -1,32 +1,29 @@
-name: Python application
+name: Python Application
 
 on:
   push:
-    branches: [ master ]
+    branches: [main]  # Or [master] if using the master branch
   pull_request:
-    branches: [ master ]
+    branches: [main]  # Or [master] if using the master branch
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-    # Set up Python
-    - name: Set up Python 3.9
+    - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.9'
+        python-version: '3.x'  # Use your required Python version
 
-    # Install dependencies
     - name: Install dependencies
-      run: make install
+      run: make install  # Ensure your Makefile contains an 'install' rule
 
-    # Run the server
-    - name: Run the app
-      run: make run & sleep 10
-    
-    # Optionally, you can add any tests to ensure the server runs correctly
-    - name: Verify server started
-      run: curl http://localhost:3000/ || exit 1
+    - name: Run the application
+      run: make run  # Ensure your Makefile contains a 'run' rule
+
+    - name: Sleep for a few seconds to ensure server starts
+      run: sleep 10
