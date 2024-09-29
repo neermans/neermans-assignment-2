@@ -29,11 +29,11 @@ jobs:
     - name: Run Flask Server using Makefile
       run: |
         make run &  # This runs 'make run' to start the server in the background
-        sleep 10    # Sleep to allow the server to start up
+        sleep 30    # Increase sleep time to 30 seconds to ensure server starts
 
     - name: Test server response
       run: |
-        curl http://127.0.0.1:5000/  # Replace with your server URL
+        curl http://127.0.0.1:3000/  # Test the server running on port 3000
 
     - name: Stop Flask Server
       run: |
