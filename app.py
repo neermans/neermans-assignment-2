@@ -177,66 +177,25 @@ def step_kmeans():
     print(f"Step-through complete. Iteration {iteration}.")
     return jsonify({'status': 'stepping', 'centroids': centroids, 'clusters': clusters, 'iteration': iteration})
 
-# @app.route('/step_kmeans', methods=['POST'])
-# def step_kmeans():
-#     """ Perform one step of the KMeans algorithm or initialize if centroids are not available """
-#     global centroids, clusters, iteration, dataset
-#     k = int(request.json['k'])
-#     init_method = request.json['init_method']
-    
-#     print(f"Step Through KMeans called with k={k}, init_method={init_method}")  # Debug log
-
-#     # Initialize KMeans if no centroids are available
-#     if len(centroids) == 0:
-#         # Ensure dataset exists
-#         if len(dataset) == 0:
-#             return jsonify({'status': 'error', 'message': 'No dataset available. Please generate the dataset first.'}), 400
-
-#         # Initialize centroids based on the chosen method
-#         if init_method == 'random':
-#             centroids = initialize_random(dataset, k)
-#         elif init_method == 'kmeans++':
-#             centroids = initialize_kmeans_plus_plus(dataset, k)
-#         elif init_method == 'farthest_first':
-#             centroids = initialize_farthest_first(dataset, k)
-#         elif init_method == 'manual':
-#             centroids = request.json.get('manual_centroids', [])
-#             if len(centroids) != k:
-#                 return jsonify({'status': 'error', 'message': 'Incorrect number of manual centroids.'}), 400
-
-#         # Assign initial clusters based on the new centroids
-#         clusters = assign_clusters(dataset, centroids)
-#         iteration = 1  # Reset iteration
-#         print(f"Centroids initialized with {init_method}: {centroids}")
-
-    # Step through the algorithm by reassigning clusters and recomputing centroids
-    clusters = assign_clusters(dataset, centroids)
-    new_centroids = recompute_centroids(clusters)
-
-    # Check for convergence
-    if new_centroids == centroids or iteration >= max_iterations:
-        print("Convergence reached during step-through.")
-        return jsonify({'status': 'converged', 'centroids': centroids, 'clusters': clusters})
-
-    # Update centroids and increment iteration count
-    centroids = new_centroids
-    iteration += 1
-
-    print(f"Step-through complete. Iteration {iteration}.")
-    return jsonify({'status': 'stepping', 'centroids': centroids, 'clusters': clusters, 'iteration': iteration})
-
 
 @app.route('/reset', methods=['POST'])
 def reset():
-    """ Reset the algorithm and state """
-    global dataset, centroids, clusters, iteration
-    dataset = []  # Clear dataset
-    centroids = []  # Clear centroids
-    clusters = []  # Clear clusters
-    iteration = 0  # Reset iteration count
-    print("State reset: Dataset, centroids, clusters, and iteration cleared.")
+    """ Reset the algorithm but keep the dataset """
+    global centroids, clusters, iteration, dataset
+
+    # Ensure the dataset still exists
+    if len(dataset) == 0:
+        return jsonify({'status': 'error', 'message': 'No dataset found to reset.'}), 400
     
-    return jsonify({'status': 'reset'})
+    # Clear centroids and clusters, but keep the dataset
+    centroids = []
+    clusters = []
+    iteration = 0  # Reset iteration count
+    
+    print("State reset: Centroids, clusters, and iteration cleared. Dataset remains the same.")
+    
+    # Return the existing dataset in the response
+    return jsonify({'status': 'reset', 'dataset': dataset})
 
 
 

@@ -28,7 +28,6 @@ document.addEventListener('DOMContentLoaded', function () {
         console.log('Reset clicked');
         resetAlgorithm();
     });
-    
 
     document.getElementById('init-method').addEventListener('change', function() {
         initMethod = document.getElementById('init-method').value;
@@ -82,10 +81,6 @@ function enableManualCentroidSelection() {
     // Plotly.purge(plotDiv);  // Clear the plot before re-rendering
     drawPlot(dataset);  // Re-draw the plot with the dataset
 
-    // // Attach a simple listener to log clicks
-    // plotDiv.on('plotly_click', function(data) {
-    //     console.log(`Clicked on plot at: (${data.points[0].x}, ${data.points[0].y})`);
-    // });
 }
 
 function attachClickListener(plotDiv) {
@@ -94,16 +89,6 @@ function attachClickListener(plotDiv) {
         // Get the clicked coordinates
         let x = data.points[0].x;
         let y = data.points[0].y;
-
-        // // Check if this point is already a centroid
-        // let alreadySelected = centroids.some(centroid => 
-        //     Math.abs(centroid[0] - x) < epsilon && Math.abs(centroid[1] - y) < epsilon
-        // );
-
-        // if (alreadySelected) {
-        //     alert('This point is already selected as a centroid.');
-        //     return;
-        // }
 
         // Add the selected point as a centroid if it's not already selected
         if (centroids.length < k) {
@@ -121,87 +106,6 @@ function attachClickListener(plotDiv) {
             alert('Centroid selection limit reached.');
         }
         });
-}
-
-    // plotDiv.on('plotly_click', function(data) {
-    //     console.log(`Clicked on plot at: (${data.points[0].x}, ${data.points[0].y})`);
-
-    //     if (centroids.length < k) {  // Check if we can add more centroids
-    //         let x = data.points[0].x;
-    //         let y = data.points[0].y;
-
-    //         // Add clicked point to centroids array
-    //         centroids.push([x, y]);
-    //         console.log(`Manual centroid added: (${x}, ${y}). Total selected: ${centroids.length}`);
-    //         console.log(`Centroids so far: `, centroids);
-
-    //         // Update the plot to show all selected centroids
-    //         drawPlot(dataset, centroids);
-
-    //         // If k centroids are selected, show a message
-    //         if (centroids.length === k) {
-    //             console.log('All centroids selected.');
-    //             alert('You have selected all centroids.');
-    //         }
-    //     } else {
-    //         console.log('Centroid selection limit reached.');
-    //     }
-//     });
-// }
-
-// Run KMeans with the selected initialization method (or manual centroids)
-// function runKMeans() {
-//     let k = document.getElementById('k-value').value;
-//     let initMethod = document.getElementById('init-method').value;
-
-//     // Log the selected initialization method and centroids for debugging
-//     console.log('Initialization method:', initMethod);
-//     console.log('Manual centroids (if applicable):', centroids);
-
-//     if (initMethod === 'manual' && centroids.length !== parseInt(k)) {
-//         alert('Please select all centroids manually before running KMeans.');
-//         return;
-//     }
-
-//     fetch('/start_kmeans', {
-//         method: 'POST',
-//         headers: { 'Content-Type': 'application/json' },
-//         body: JSON.stringify({
-//             k: k,
-//             init_method: initMethod,
-//             manual_centroids: centroids  // Pass manual centroids if selected
-//         })
-//     })
-//     .then(response => response.json())
-//     .then(data => {
-//         if (data.status === 'error') {
-//             alert(data.message);
-//             console.log('Error:', data.message);
-//         } else {
-//             centroids = data.centroids;
-//             clusters = data.clusters;
-//             console.log(`KMeans started with centroids:`, centroids);
-//             drawPlot(dataset, centroids, clusters);  // Update the plot
-//         }
-//     })
-//     .catch(error => console.error('Error during Run KMeans:', error));
-// }
-
-function resetAlgorithm() {
-    fetch('/reset', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-    })
-    .then(response => response.json())
-    .then(() => {
-        // Clear the global variables
-        dataset = [];
-        centroids = [];
-        clusters = [];
-        console.log('Algorithm reset');
-        clearPlot(); // Clear the plot
-    })
-    .catch(error => console.error('Error during reset:', error));
 }
 
 
@@ -277,84 +181,6 @@ function stepThroughKMeans() {
     .catch(error => console.error('Error during step through KMeans:', error));
 }
 
-// // Visualize the dataset, centroids, and clusters using Plotly
-// function drawPlot(dataset = [], centroids = [], clusters = []) {
-//     let traces = [];
-
-//     // Plot the dataset points
-//     if (dataset.length > 0) {
-//         let dataTrace = {
-//             x: dataset.map(point => point[0]),  // Extract x-coordinates
-//             y: dataset.map(point => point[1]),  // Extract y-coordinates
-//             mode: 'markers',
-//             type: 'scatter',
-//             marker: { size: 8, color: 'blue' },  // Data points are blue
-//             name: 'Data Points'
-//         };
-//         traces.push(dataTrace);
-//     }
-
-//     // Plot the centroids if they exist
-//     if (centroids.length > 0) {
-//         let centroidTrace = {
-//             x: centroids.map(point => point[0]),  // X-coordinates of centroids
-//             y: centroids.map(point => point[1]),  // Y-coordinates of centroids
-//             mode: 'markers',
-//             type: 'scatter',
-//             marker: { size: 12, color: 'red', symbol: 'x' },  // Centroids are red Xs
-//             name: 'Centroids'
-//         };
-//         traces.push(centroidTrace);
-//     }
-
-//     let layout = {
-//         title: `KMeans Clustering (k = ${k} Clusters)`,
-//         xaxis: { title: 'X Axis' },
-//         yaxis: { title: 'Y Axis' }
-//     };
-
-//     // Draw the plot
-//     Plotly.newPlot('plot', traces, layout);
-// }
-
-// function drawPlot(dataset = [], centroids = [], clusters = []) {
-//     let traces = [];
-
-//     // Plot the dataset points
-//     if (dataset.length > 0) {
-//         let dataTrace = {
-//             x: dataset.map(point => point[0]),  // Extract x-coordinates
-//             y: dataset.map(point => point[1]),  // Extract y-coordinates
-//             mode: 'markers',
-//             type: 'scatter',
-//             marker: { size: 8, color: 'blue' },  // Data points are blue
-//             name: 'Data Points'
-//         };
-//         traces.push(dataTrace);
-//     }
-
-//     // Plot the centroids if they exist
-//     if (centroids.length > 0) {
-//         let centroidTrace = {
-//             x: centroids.map(point => point[0]),  // X-coordinates of centroids
-//             y: centroids.map(point => point[1]),  // Y-coordinates of centroids
-//             mode: 'markers',
-//             type: 'scatter',
-//             marker: { size: 12, color: 'red', symbol: 'x' },  // Centroids are red Xs
-//             name: 'Centroids'
-//         };
-//         traces.push(centroidTrace);
-//     }
-
-//     let layout = {
-//         title: `KMeans Clustering (k = ${k} Clusters)`,
-//         xaxis: { title: 'X Axis' },
-//         yaxis: { title: 'Y Axis' }
-//     };
-
-//     // Update the plot without recreating it
-//     Plotly.react('plot', traces, layout);
-// }
 
 function drawPlot(dataset = [], centroids = [], clusters = []) {
     let traces = [];
@@ -415,3 +241,37 @@ function clearPlot() {
     Plotly.purge('plot');  // Clear the plot
     console.log('Plot cleared');
 }
+
+function resetAlgorithm() {
+    console.log('Reset clicked');
+
+    fetch('/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'reset') {
+            console.log('State has been reset');
+            
+            // Clear frontend state (centroids, clusters)
+            centroids = [];
+            clusters = [];
+
+            // Log the dataset returned by the backend
+            console.log('Dataset after reset:', data.dataset);  // Debugging log to ensure dataset is received
+            
+            // Check if dataset is properly defined before using it
+            if (data.dataset && data.dataset.length > 0) {
+                dataset = data.dataset;  // Assign the dataset from the backend to the global variable
+                drawPlot(dataset);  // Re-plot the dataset (without centroids or clusters)
+            } else {
+                console.error('No dataset returned from the server after reset.');
+            }
+        }
+    })
+    .catch(error => console.error('Error during reset:', error));
+}
+
+
+
