@@ -28,16 +28,20 @@ jobs:
 
     - name: Run Flask Server using Makefile
       run: |
-        make run &  # This runs 'make run' to start the server in the background
-        sleep 60    # Wait for the server to start
+        make run > flask_log.txt 2>&1 &  # Start Flask server and log output
+        sleep 90    # Wait for the server to fully start
 
     - name: Log running processes (debugging)
       run: |
         ps aux  # Check if Flask server is running
 
+    - name: Display Flask Server Logs
+      run: |
+        cat flask_log.txt  # Output the Flask logs for debugging
+
     - name: Test server response
       run: |
-        curl http://127.0.0.1:3000/  # Use localhost to test the server
+        curl http://localhost:3000/  # Test server on port 3000
 
     - name: Stop Flask Server
       run: |
