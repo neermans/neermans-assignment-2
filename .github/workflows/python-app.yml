@@ -1,4 +1,4 @@
-name: Python Application - Assignment
+name: Python application
 
 on:
   push:
@@ -16,33 +16,24 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-
     - name: Set up Python 3.10
       uses: actions/setup-python@v3
       with:
         python-version: "3.10"
-
-    - name: Install dependencies using Makefile
+        
+    - name: Install dependencies
       run: |
-        make install  # This runs 'make install' to install dependencies
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
 
-    - name: Run Flask Server using Makefile
+    - name: Start Flask server
       run: |
-        make run > flask_log.txt 2>&1 &  # Start Flask server and log output
-        sleep 90    # Wait for the server to fully start
+        nohup flask run --host=0.0.0.0 --port=3000 &
+        sleep 5  # Give Flask time to start
 
-    - name: Log running processes (debugging)
+    - name: Test Flask server
       run: |
-        ps aux  # Check if Flask server is running
+        curl http://localhost:3000/
 
-    - name: Display Flask Server Logs
-      run: |
-        cat flask_log.txt  # Output the Flask logs for debugging
-
-    - name: Test server response
-      run: |
-        curl http://localhost:3000/  # Test server on port 3000
-
-    - name: Stop Flask Server
-      run: |
-        kill $(jobs -p)  # Kill the background Flask server job
+    - name: Stop Flask server
+      run: pkill -f flask || true  # Kill the Flask server
