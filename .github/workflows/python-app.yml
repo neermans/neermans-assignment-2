@@ -2,9 +2,9 @@ name: Python Application
 
 on:
   push:
-    branches: [main]  # Or [master] if using the master branch
+    branches: [main]  
   pull_request:
-    branches: [main]  # Or [master] if using the master branch
+    branches: [main]  
 
 jobs:
   build:
@@ -17,13 +17,16 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.x'  # Use your required Python version
+        python-version: '3.x'
+
+    - name: Install system dependencies
+      run: sudo apt-get install python3-distutils
 
     - name: Install dependencies
-      run: make install  # Ensure your Makefile contains an 'install' rule
+      run: make install
 
     - name: Run the application
-      run: make run  # Ensure your Makefile contains a 'run' rule
+      run: make run
 
     - name: Sleep for a few seconds to ensure server starts
       run: sleep 10

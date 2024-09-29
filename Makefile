@@ -1,5 +1,6 @@
 # Install dependencies
 install:
+	pip install setuptools
 	pip install -r requirements.txt
 
 # Run the Flask web app locally on http://localhost:3000
