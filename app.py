@@ -132,31 +132,20 @@ def step_kmeans():
     k = int(request.json['k'])
     init_method = request.json['init_method']
     
-    print(f"Step Through KMeans called with k={k}, init_method={init_method}")  # Debug log
+    print(f"Step Through KMeans called with k={k}, init_method={init_method}")
 
-    # Initialize KMeans if no centroids are available
+    # Ensure centroids are available
     if len(centroids) == 0:
         print(f"No centroids found. Initializing centroids using {init_method}.")
 
-        # Ensure dataset exists
-        if len(dataset) == 0:
-            return jsonify({'status': 'error', 'message': 'No dataset available. Please generate the dataset first.'}), 400
-
-        # Initialize centroids based on the chosen method
-        if init_method == 'random':
-            centroids = initialize_random(dataset, k)
-        elif init_method == 'kmeans++':
-            centroids = initialize_kmeans_plus_plus(dataset, k)
-        elif init_method == 'farthest_first':
-            centroids = initialize_farthest_first(dataset, k)
-        elif init_method == 'manual':
+        if init_method == 'manual':
             centroids = request.json.get('manual_centroids', [])
             if len(centroids) != k:
                 return jsonify({'status': 'error', 'message': 'Incorrect number of manual centroids.'}), 400
-
-        print(f"Centroids initialized: {centroids}")
-
-        # Assign initial clusters based on the new centroids
+        else:
+            # Initialization methods for other types
+            centroids = initialize_random(dataset, k) if init_method == 'random' else initialize_kmeans_plus_plus(dataset, k)
+        
         clusters = assign_clusters(dataset, centroids)
         iteration = 1  # Reset iteration
         return jsonify({'centroids': centroids, 'clusters': clusters, 'status': 'stepping', 'iteration': iteration})
@@ -167,14 +156,13 @@ def step_kmeans():
 
     # Check for convergence
     if new_centroids == centroids or iteration >= max_iterations:
-        print("Convergence reached during step-through.")
+        print("Convergence reached.")
         return jsonify({'status': 'converged', 'centroids': centroids, 'clusters': clusters})
 
     # Update centroids and increment iteration count
     centroids = new_centroids
     iteration += 1
 
-    print(f"Step-through complete. Iteration {iteration}.")
     return jsonify({'status': 'stepping', 'centroids': centroids, 'clusters': clusters, 'iteration': iteration})
 
 

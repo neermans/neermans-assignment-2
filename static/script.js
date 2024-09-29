@@ -81,6 +81,7 @@ function enableManualCentroidSelection() {
     // Plotly.purge(plotDiv);  // Clear the plot before re-rendering
     drawPlot(dataset);  // Re-draw the plot with the dataset
 
+
 }
 
 function attachClickListener(plotDiv) {
@@ -109,52 +110,79 @@ function attachClickListener(plotDiv) {
 }
 
 
+
 function runKMeans() {
-    let k = parseInt(document.getElementById('k-value').value);
+    let k = parseInt(document.getElementById('k-value').value);  // Get the number of clusters (k)
     let initMethod = document.getElementById('init-method').value;
 
     console.log('Initialization method:', initMethod);
-    console.log('Number of clusters (k):', k);
     console.log('Manual centroids (if applicable):', centroids);
 
     // Ensure all centroids are selected for manual method
     if (initMethod === 'manual' && centroids.length !== k) {
-        alert('Please select all centroids manually before running KMeans.');
-        return;
+        alert(`Please select exactly ${k} centroids manually before running KMeans.`);
+        return;  // Do not proceed if the centroids are not correctly selected
     }
 
-    // Function to call the backend and run KMeans until convergence
-    function runUntilConvergence() {
-        fetch('/step_kmeans', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                k: k,
-                init_method: initMethod
-            })
+    // First, call start_kmeans to initialize centroids and clusters
+    fetch('/start_kmeans', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            k: k,
+            init_method: initMethod,
+            manual_centroids: centroids  // Pass manual centroids if selected
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'converged') {
-                console.log('KMeans has converged!');
-                alert('KMeans has converged!');
-                drawPlot(dataset, data.centroids, data.clusters);  // Final plot after convergence
-            } else if (data.status === 'stepping') {
-                centroids = data.centroids;
-                clusters = data.clusters;
-                console.log('Iteration:', data.iteration);
-                drawPlot(dataset, centroids, clusters);  // Update plot after each iteration
-                
-                // Call the function recursively to continue until convergence
-                setTimeout(runUntilConvergence, 500);  // Delay each step by 500ms
-            }
-        })
-        .catch(error => console.error('Error during Run KMeans:', error));
-    }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'error') {
+            alert(data.message);
+            console.log('Error:', data.message);
+        } else {
+            centroids = data.centroids;
+            clusters = data.clusters;
+            console.log(`KMeans started with centroids:`, centroids);
+            drawPlot(dataset, centroids, clusters);  // Update the plot after initialization
 
-    // Start the iteration loop
-    runUntilConvergence();
+            // After centroids and clusters are initialized, run until convergence
+            runUntilConvergence();  // Automatically step through until convergence
+        }
+    })
+    .catch(error => console.error('Error during Run KMeans:', error));
 }
+
+function runUntilConvergence() {
+    let k = parseInt(document.getElementById('k-value').value);  // Get the number of clusters (k)
+    let initMethod = document.getElementById('init-method').value;
+
+    fetch('/step_kmeans', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            k: k,
+            init_method: initMethod,
+            manual_centroids: initMethod === 'manual' ? centroids : []  // Pass manual centroids if necessary
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'converged') {
+            console.log('KMeans has converged!');
+            alert('KMeans has converged!');
+            drawPlot(dataset, data.centroids, data.clusters);  // Final plot after convergence
+        } else if (data.status === 'stepping') {
+            centroids = data.centroids;
+            clusters = data.clusters;
+            console.log('Iteration:', data.iteration);
+            drawPlot(dataset, centroids, clusters);  // Update the plot after each step
+            
+            setTimeout(runUntilConvergence, 500);  // Continue iteration with delay
+        }
+    })
+    .catch(error => console.error('Error during Run Until Convergence:', error));
+}
+
 
 // Step through KMeans one iteration at a time
 function stepThroughKMeans() {
@@ -180,7 +208,6 @@ function stepThroughKMeans() {
     })
     .catch(error => console.error('Error during step through KMeans:', error));
 }
-
 
 function drawPlot(dataset = [], centroids = [], clusters = []) {
     let traces = [];
@@ -253,7 +280,7 @@ function resetAlgorithm() {
     .then(data => {
         if (data.status === 'reset') {
             console.log('State has been reset');
-            
+            r
             // Clear frontend state (centroids, clusters)
             centroids = [];
             clusters = [];
