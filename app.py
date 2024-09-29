@@ -4,7 +4,7 @@ import random
 
 app = Flask(__name__)
 
-
+# Global vars
 dataset = []
 centroids = []
 clusters = []
@@ -24,29 +24,25 @@ def initialize_kmeans_plus_plus(data, k):
     if len(data) == 0:
         raise ValueError("Empty dataset.")
     
-
+    # initialize one centroid
     centroids = [random.choice(data)]
-    print(f"First centroid (KMeans++): {centroids}")
+
     
     for _ in range(1, k):
-
+        # Calculate distances for every data point to the nearest centroid
         distances = [min([np.linalg.norm(np.array(p) - np.array(c)) for c in centroids]) for p in data]
-        
-
-        print(f"Distances for centroid {_}: {distances}")
-        
-
+         
+        # New centroid based on the weighted probability distribution
         new_centroid = random.choices(data, weights=distances, k=1)[0]
         centroids.append(new_centroid)
-        print(f"New centroid added (KMeans++): {new_centroid}")
+
     
-    print(f"Final centroids after KMeans++ initialization: {centroids}")
     return centroids
 
 
 def initialize_farthest_first(data, k):
-    """ Initialize centroids such that they are farthest apart """
-    centroids = [random.choice(data)] 
+    """ Pick centroids that are the farthest apart from eachother """
+    centroids = [random.choice(data)]  # once again pick a random data point for the centroid
     for _ in range(1, k):
         farthest_point = max(data, key=lambda p: min([np.linalg.norm(np.array(p) - np.array(c)) for c in centroids]))
         centroids.append(farthest_point)
@@ -54,7 +50,7 @@ def initialize_farthest_first(data, k):
 
 
 def assign_clusters(data, centroids):
-    """ Assign each point to the nearest centroid """
+    """ each point to nearest centroid """
     if len(centroids) == 0:
         raise ValueError("No centroids provided.")
     
@@ -67,51 +63,46 @@ def assign_clusters(data, centroids):
 
 
 def recompute_centroids(clusters):
-    """ Recompute centroids as the mean of the points in each cluster """
+    """ Centroids are now the mean of the points in each cluster """
     new_centroids = [np.mean(cluster, axis=0).tolist() for cluster in clusters if len(cluster) > 0]
     return new_centroids
 
 
 @app.route('/')
 def index():
-    """ Serve the main HTML page """
+    """ give back to html """
     return render_template('index.html')
 
 
 @app.route('/generate_dataset', methods=['POST'])
 def generate_dataset():
-    """ Generate a new random dataset and store it globally """
+    """ randomizing dataset """
     global dataset, iteration
     num_points = int(request.json['num_points'])
-    dataset = np.random.rand(num_points, 2).tolist() 
-    iteration = 0  
-    print(f"New dataset generated with {num_points} points.")
+    dataset = np.random.rand(num_points, 2).tolist()  # Generate random 2D points
+    iteration = 0  # Reset iteration
     
-    return jsonify({'dataset': dataset})  
+    return jsonify({'dataset': dataset})  # Return the dataset to the frontend
 
 
 @app.route('/start_kmeans', methods=['POST'])
 def start_kmeans():
-    """ Initialize KMeans with centroids and reset the step-through process """
+    """ Initialize KMeans and reset  """
     global centroids, clusters, iteration
     k = int(request.json['k'])
     init_method = request.json['init_method']
-
-    print(f"Received initialization method: {init_method}")
-    print(f"Received manual centroids nada aqui: {centroids}")
-    print(f"Received initialization method: {init_method}, k = {k}")
     
-
     if len(dataset) == 0:
         return jsonify({'status': 'error', 'message': 'No dataset available. Please generate the dataset first.'}), 400
     
-
+    # Manual centroids
     if init_method == 'manual':
         centroids = request.json.get('manual_centroids', [])
         print(f"Manual centroids provided: {centroids}")
         if len(centroids) != k:
             return jsonify({'status': 'error', 'message': 'Incorrect number of manual centroids.'}), 400
     else:
+        # Initializations
         if init_method == 'random':
             centroids = initialize_random(dataset, k)
         elif init_method == 'kmeans++':
@@ -119,9 +110,9 @@ def start_kmeans():
         elif init_method == 'farthest_first':
             centroids = initialize_farthest_first(dataset, k)
 
-
+    # original clusters
     clusters = assign_clusters(dataset, centroids)
-    iteration = 1  
+    iteration = 1  # Reset 
     
     return jsonify({'centroids': centroids, 'clusters': clusters})
 
@@ -130,68 +121,63 @@ def step_kmeans():
     global centroids, clusters, iteration, dataset
     k = int(request.json['k'])
     init_method = request.json['init_method']
-    
-    print(f"Step Through KMeans called with k={k}, init_method={init_method}") 
 
-
+    # Ensure centroids are available
     if len(centroids) == 0:
         print(f"No centroids found. Initializing centroids using {init_method}.")
 
-        if len(dataset) == 0:
-            return jsonify({'status': 'error', 'message': 'No dataset available. Please generate the dataset first.'}), 400
-
-
-        if init_method == 'random':
-            centroids = initialize_random(dataset, k)
-        elif init_method == 'kmeans++':
-            centroids = initialize_kmeans_plus_plus(dataset, k)
-        elif init_method == 'farthest_first':
-            centroids = initialize_farthest_first(dataset, k)
-        elif init_method == 'manual':
+        if init_method == 'manual':
+            # manual centroids
             centroids = request.json.get('manual_centroids', [])
+            print(f"Manual centroids received: {centroids}")
+            # error here
             if len(centroids) != k:
-                return jsonify({'status': 'error', 'message': 'Incorrect number of manual centroids.'}), 400
-
-        print(f"Centroids initialized: {centroids}")
-
-
+                return jsonify({'status': 'error', 'message': f'Please select exactly {k} centroids manually.'}), 400
+        else:
+            # initializations
+            if init_method == 'random':
+                centroids = initialize_random(dataset, k)
+            elif init_method == 'kmeans++':
+                centroids = initialize_kmeans_plus_plus(dataset, k)
+            elif init_method == 'farthest_first':
+                centroids = initialize_farthest_first(dataset, k)
+        
+        # original clusters based on centroids
         clusters = assign_clusters(dataset, centroids)
-        iteration = 1  
+        iteration = 1  # Reset
         return jsonify({'centroids': centroids, 'clusters': clusters, 'status': 'stepping', 'iteration': iteration})
 
+    # Step through 
     clusters = assign_clusters(dataset, centroids)
     new_centroids = recompute_centroids(clusters)
 
-
+    # Check for convergence
     if new_centroids == centroids or iteration >= max_iterations:
-        print("Convergence reached during step-through.")
+        print("Convergence reached.")
         return jsonify({'status': 'converged', 'centroids': centroids, 'clusters': clusters})
 
-
+    # Update centroids and increment
     centroids = new_centroids
     iteration += 1
 
-    print(f"Step-through complete. Iteration {iteration}.")
     return jsonify({'status': 'stepping', 'centroids': centroids, 'clusters': clusters, 'iteration': iteration})
 
 
 @app.route('/reset', methods=['POST'])
 def reset():
-    """ Reset the algorithm but keep the dataset """
+    """ Reset algorithm but keep dataset """
     global centroids, clusters, iteration, dataset
-
 
     if len(dataset) == 0:
         return jsonify({'status': 'error', 'message': 'No dataset found to reset.'}), 400
     
-
+    # Clear centroids and clusters
     centroids = []
     clusters = []
-    iteration = 0  
+    iteration = 0 
     
     print("State reset: Centroids, clusters, and iteration cleared. Dataset remains the same.")
     
-
     return jsonify({'status': 'reset', 'dataset': dataset})
 
 
